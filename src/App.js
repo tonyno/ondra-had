@@ -175,6 +175,7 @@ function App() {
 
     // Draw Food
     ctx.drawImage(appleImage, food.x * 20, food.y * 20, 20, 20); // Vykreslení jablka
+    // eslint-disable-next-line
   }, [snake, food, screenSize]);
 
   return (
