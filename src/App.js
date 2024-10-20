@@ -189,7 +189,7 @@ function App() {
         style={{ display: 'block', width: '100vw', height: '100vh' }} // Zajištění, že plátno zabírá celou obrazovku
       ></canvas>
       {gameOver && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '48px', color: 'red' }}>Game Over!</div>}
-      <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '24px', color: 'black' }}>Score: {score}</div> {/* Zobrazení skóre */}
+      <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '24px', color: 'white' }}>Score: {score}</div> {/* Zobrazení skóre */}
     </>
   );
 }
