@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const SNAKE_SPEED = 100; // Snake speed in milliseconds
+const SNAKE_SPEED = 100; // Rychlost hada je nyní 50 milisekund
 const INITIAL_SNAKE = [
   { x: 10, y: 10 },
   { x: 10, y: 9 },
@@ -18,6 +18,15 @@ function App() {
 
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
+
+  const appleImage = new Image();
+  appleImage.src = './apple.png'; // Cesta k obrázku jablka
+  appleImage.onload = () => {
+    // Kód, který se má spustit po načtení obrázku
+  };
+
+  const [gameOver, setGameOver] = useState(false); // Přidání stavu pro ukončení hry
+  const [score, setScore] = useState(0); // Přidání stavu pro skóre
 
   useEffect(() => {
     const resizeListener = () => {
@@ -94,28 +103,47 @@ function App() {
 
   useEffect(() => {
     const gameLoop = setInterval(() => {
-      setSnake((prevSnake) => {
-        const newSnake = [...prevSnake];
-        const head = newSnake[0];
-        const newHead = { x: head.x + direction.x, y: head.y + direction.y };
+      if (!gameOver) { // Kontrola, zda hra není ukončena
+        setSnake((prevSnake) => {
+          const newSnake = [...prevSnake];
+          const head = newSnake[0];
+          const newHead = { x: head.x + direction.x, y: head.y + direction.y };
 
-        if (newHead.x === food.x && newHead.y === food.y) {
-          setFood({
-            x: Math.floor(Math.random() * (screenSize.width / 20)),
-            y: Math.floor(Math.random() * (screenSize.height / 20)),
-          });
-        } else {
-          newSnake.pop(); // Remove tail if no food is eaten
-        }
+          // Kontrola kolize s okrajem obrazovky
+          if (
+            newHead.x < 0 || // Levý okraj
+            newHead.x >= screenSize.width / 20 || // Pravý okraj
+            newHead.y < 0 || // Horní okraj
+            newHead.y >= screenSize.height / 20 // Dolní okraj
+          ) {
+            setGameOver(true); // Ukončen�� hry
+          }
 
-        newSnake.unshift(newHead); // Add new head
+          // Kontrola kolize s jídlem
+          if (newHead.x === food.x && newHead.y === food.y) {
+            setFood({
+              x: Math.floor(Math.random() * (screenSize.width / 20)),
+              y: Math.floor(Math.random() * (screenSize.height / 20)),
+            });
+            setScore(prevScore => prevScore + 1); // Zvyšte skóre
+          } else {
+            newSnake.pop(); // Odstranění ocasu, pokud není jídlo snědeno
+          }
 
-        return newSnake;
-      });
+          // Kontrola kolize s vlastním tělem
+          if (newSnake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+            setGameOver(true); // Ukončení hry
+          }
+
+          newSnake.unshift(newHead); // Přidání nového hlavy
+
+          return newSnake;
+        });
+      }
     }, SNAKE_SPEED);
 
     return () => clearInterval(gameLoop);
-  }, [direction, food, screenSize]);
+  }, [direction, food, screenSize, gameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -123,25 +151,45 @@ function App() {
     ctx.clearRect(0, 0, screenSize.width, screenSize.height);
     
     // Draw Snake
-    snake.forEach((segment) => {
+    snake.forEach((segment, index) => {
       ctx.fillStyle = 'green';
-      ctx.fillRect(segment.x * 20, segment.y * 20, 20, 20);
+      if (index === 0) { // Hlava hada
+        // Vykreslení polokoule pro hlavu
+        ctx.beginPath();
+        ctx.arc(segment.x * 20 + 10, segment.y * 20 + 20, 10, 0, Math.PI, true); // Polokoule
+        ctx.fill();
+        
+        // Vykreslení očí
+        ctx.fillStyle = 'white'; // Barva očí
+        ctx.beginPath();
+        ctx.arc(segment.x * 20 + 5, segment.y * 20 + 15, 2, 0, Math.PI * 2); // Levé oko
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(segment.x * 20 + 15, segment.y * 20 + 15, 2, 0, Math.PI * 2); // Pravé oko
+        ctx.fill();
+      } else {
+        // Vykreslení těla hada
+        ctx.fillRect(segment.x * 20, segment.y * 20, 20, 20);
+      }
     });
 
     // Draw Food
-    ctx.fillStyle = 'red';
-    ctx.fillRect(food.x * 20, food.y * 20, 20, 20);
+    ctx.drawImage(appleImage, food.x * 20, food.y * 20, 20, 20); // Vykreslení jablka
   }, [snake, food, screenSize]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={screenSize.width}
-      height={screenSize.height}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      style={{ display: 'block', width: '100vw', height: '100vh' }}
-    ></canvas>
+    <>
+      <canvas
+        ref={canvasRef}
+        width={screenSize.width} // Nastavení šířky plátna na šířku obrazovky
+        height={screenSize.height} // Nastavení výšky plátna na výšku obrazovky
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        style={{ display: 'block', width: '100vw', height: '100vh' }} // Zajištění, že plátno zabírá celou obrazovku
+      ></canvas>
+      {gameOver && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '48px', color: 'red' }}>Game Over</div>}
+      <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '24px', color: 'black' }}>Score: {score}</div> {/* Zobrazení skóre */}
+    </>
   );
 }
 
